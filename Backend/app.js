@@ -11,16 +11,15 @@ if (process.env.NODE_ENV !== "production") {
 
 const Groq = require("groq-sdk");
 const fetch = globalThis.fetch || require('node-fetch');
-
 const AIResult = require("./models/AIResult");
 
 const app = express();
 
-// 🔥 Ensure uploads folder exists (CRITICAL FIX)
+// 🔥 Create uploads folder safely
 const uploadDir = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir, { recursive: true });
 }
 
 // 🔥 Groq setup
@@ -28,7 +27,7 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-// ✅ MongoDB connect
+// ✅ MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log("Mongo Error ❌", err));
@@ -36,7 +35,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use(express.json());
 app.use('/uploads', express.static(uploadDir));
 
-// ✅ FIXED multer setup
+// 🔥 FIXED multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
@@ -50,18 +49,18 @@ app.get('/', (req, res) => {
 });
 
 
-// 🔥 MAIN ROUTE
+// 🚀 MAIN API
 app.post('/api/analyze', upload.single('resume'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
-
-  const { filename } = req.file;
-  const filePath = req.file.path;
-
-  console.log(`Uploading ${filename}`);
-
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const { filename, path: filePath } = req.file;
+
+    console.log("📁 File saved at:", filePath);
+
+    // 🔥 Read PDF directly
     const dataBuffer = fs.readFileSync(filePath);
     const data = await pdfParse(dataBuffer);
 
@@ -85,7 +84,6 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
     const skillKeywords = ["JavaScript", "React", "Node.js", "SQL", "Python", "MongoDB", "HTML", "CSS"];
     const skills = skillKeywords.filter(skill => text.includes(skill.toLowerCase()));
 
-    // Feedback
     let feedback = [];
 
     if (atsScore < 60) {
@@ -98,7 +96,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     feedback.push("Add measurable achievements (numbers, impact) in your experience.");
 
-    // 🔥 SAVE INITIAL RECORD
+    // 🔥 Save initial DB entry
     await AIResult.create({
       filename,
       status: "processing"
@@ -106,7 +104,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     const encodedFilename = encodeURIComponent(filename);
 
-    // 🔥 FAST RESPONSE
+    // 🔥 Fast response
     res.json({
       success: true,
       filename: encodedFilename,
@@ -117,7 +115,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
       summaryText: rawText.slice(0, 300)
     });
 
-    // 🔥 BACKGROUND AI
+    // 🔥 Background AI
     setTimeout(async () => {
       try {
         console.log("🚀 AI STARTED:", filename);
@@ -152,7 +150,6 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
           aiFeedback = data.response || "AI failed";
         }
 
-        // 🔥 UPDATE DB
         await AIResult.findOneAndUpdate(
           { filename },
           {
@@ -177,11 +174,8 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
     }, 0);
 
   } catch (err) {
-    console.error("PDF ERROR:", err);
-
-    res.status(500).json({
-      error: 'Failed to extract text from PDF'
-    });
+    console.error("❌ ERROR:", err.message);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
