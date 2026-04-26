@@ -1,0 +1,40 @@
+# =========================
+# 🔥 ROOT LEVEL IGNORE
+# =========================
+
+# Node modules (both frontend + backend)
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files (VERY IMPORTANT)
+.env
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build folders
+dist/
+build/
+.cache/
+
+# Uploads (backend)
+backend/uploads/
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# Temp files
+*.tmp
+*.temp
+
+# Package lock optional (keep if you want stable installs)
+# package-lock.json

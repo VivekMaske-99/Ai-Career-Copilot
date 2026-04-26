@@ -1,0 +1,31 @@
+# Node modules
+node_modules/
+
+# Environment variables (VERY IMPORTANT)
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Uploads (optional - depends if you want to store files)
+uploads/
+
+# Build / cache
+dist/
+build/
+.cache/
+
+# VS Code settings
+.vscode/
