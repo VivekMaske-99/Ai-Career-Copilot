@@ -4,14 +4,24 @@ const path = require('path');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const mongoose = require("mongoose");
-require("dotenv").config();
 
-const Groq = require("groq-sdk"); // ✅ NEW
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
+const Groq = require("groq-sdk");
 const fetch = globalThis.fetch || require('node-fetch');
 
 const AIResult = require("./models/AIResult");
 
 const app = express();
+
+// 🔥 Ensure uploads folder exists (CRITICAL FIX)
+const uploadDir = path.join(__dirname, 'uploads');
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
 // 🔥 Groq setup
 const groq = new Groq({
@@ -24,11 +34,11 @@ mongoose.connect(process.env.MONGO_URI)
   .catch(err => console.log("Mongo Error ❌", err));
 
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(uploadDir));
 
-// multer setup
+// ✅ FIXED multer setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 
@@ -55,11 +65,12 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
     const dataBuffer = fs.readFileSync(filePath);
     const data = await pdfParse(dataBuffer);
 
-    if (!data.text || data.text.trim().length === 0) {
+    const rawText = data.text;
+
+    if (!rawText || rawText.trim().length === 0) {
       return res.status(400).json({ error: 'No readable text found in PDF' });
     }
 
-    const rawText = data.text;
     const text = rawText.toLowerCase();
 
     // ATS Score
@@ -95,7 +106,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     const encodedFilename = encodeURIComponent(filename);
 
-    // 🔥 SEND FAST RESPONSE
+    // 🔥 FAST RESPONSE
     res.json({
       success: true,
       filename: encodedFilename,
@@ -114,22 +125,19 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
         const limitedText = rawText.slice(0, 1000);
         let aiFeedback = "";
 
-        // 🔥 SWITCH BASED ON ENV
         if (process.env.AI_PROVIDER === "groq") {
-          // ✅ GROQ (PRODUCTION)
           const completion = await groq.chat.completions.create({
-  model: "llama-3.1-8b-instant", // ✅ UPDATED
-  messages: [
-    {
-      role: "user",
-      content: `Give 3 short resume improvement tips:\n\n${limitedText}`
-    }
-  ]
-});
+            model: "llama-3.1-8b-instant",
+            messages: [
+              {
+                role: "user",
+                content: `Give 3 short resume improvement tips:\n\n${limitedText}`
+              }
+            ]
+          });
 
           aiFeedback = completion.choices[0].message.content;
         } else {
-          // 🧪 OLLAMA (LOCAL DEV)
           const response = await fetch("http://localhost:11434/api/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -162,7 +170,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
           { filename },
           {
             status: "done",
-            aiFeedback: "AI failed to generate response"
+            aiFeedback: "AI failed"
           }
         );
       }
@@ -197,5 +205,6 @@ app.get('/api/ai-result/:filename', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 console.log("GROQ:", process.env.GROQ_API_KEY ? "FOUND" : "MISSING");
 console.log("MONGO:", process.env.MONGO_URI ? "FOUND" : "MISSING");
