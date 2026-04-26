@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const mongoose = require("mongoose");
+const cors = require("cors");
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
@@ -15,27 +16,41 @@ const AIResult = require("./models/AIResult");
 
 const app = express();
 
-// 🔥 Create uploads folder safely
+
+// ✅ 🔥 CORS FIX
+app.use(cors({
+  origin: "*", // allow all (for now)
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
+
+// 🔥 Create uploads folder FIRST
 const uploadDir = path.join(__dirname, 'uploads');
 
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+
+// ✅ Middlewares
+app.use(express.json());
+app.use('/uploads', express.static(uploadDir));
+
+
 // 🔥 Groq setup
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
+
 
 // ✅ MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB Connected ✅"))
   .catch(err => console.log("Mongo Error ❌", err));
 
-app.use(express.json());
-app.use('/uploads', express.static(uploadDir));
 
-// 🔥 FIXED multer
+// 🔥 Multer setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
@@ -43,7 +58,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// test route
+
+// ✅ Test route
 app.get('/', (req, res) => {
   res.send("Server running 🚀");
 });
@@ -60,7 +76,6 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     console.log("📁 File saved at:", filePath);
 
-    // 🔥 Read PDF directly
     const dataBuffer = fs.readFileSync(filePath);
     const data = await pdfParse(dataBuffer);
 
@@ -81,9 +96,16 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
     if (text.includes('python')) atsScore += 20;
 
     // Skills
-    const skillKeywords = ["JavaScript", "React", "Node.js", "SQL", "Python", "MongoDB", "HTML", "CSS"];
-    const skills = skillKeywords.filter(skill => text.includes(skill.toLowerCase()));
+    const skillKeywords = [
+      "JavaScript", "React", "Node.js",
+      "SQL", "Python", "MongoDB", "HTML", "CSS"
+    ];
 
+    const skills = skillKeywords.filter(skill =>
+      text.includes(skill.toLowerCase())
+    );
+
+    // Feedback
     let feedback = [];
 
     if (atsScore < 60) {
@@ -96,7 +118,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     feedback.push("Add measurable achievements (numbers, impact) in your experience.");
 
-    // 🔥 Save initial DB entry
+    // Save initial DB entry
     await AIResult.create({
       filename,
       status: "processing"
@@ -104,7 +126,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
     const encodedFilename = encodeURIComponent(filename);
 
-    // 🔥 Fast response
+    // Fast response
     res.json({
       success: true,
       filename: encodedFilename,
@@ -152,10 +174,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
         await AIResult.findOneAndUpdate(
           { filename },
-          {
-            status: "done",
-            aiFeedback
-          }
+          { status: "done", aiFeedback }
         );
 
         console.log("🔥 AI STORED:", filename);
@@ -165,10 +184,7 @@ app.post('/api/analyze', upload.single('resume'), async (req, res) => {
 
         await AIResult.findOneAndUpdate(
           { filename },
-          {
-            status: "done",
-            aiFeedback: "AI failed"
-          }
+          { status: "done", aiFeedback: "AI failed" }
         );
       }
     }, 0);
@@ -198,7 +214,12 @@ app.get('/api/ai-result/:filename', async (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
+app.listen(PORT, () =>
+  console.log(`Server running on port ${PORT}`)
+);
+
+
+// DEBUG
 console.log("GROQ:", process.env.GROQ_API_KEY ? "FOUND" : "MISSING");
 console.log("MONGO:", process.env.MONGO_URI ? "FOUND" : "MISSING");
