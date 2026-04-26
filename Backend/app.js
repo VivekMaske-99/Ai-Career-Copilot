@@ -197,3 +197,5 @@ app.get('/api/ai-result/:filename', async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+console.log("GROQ:", process.env.GROQ_API_KEY ? "FOUND" : "MISSING");
+console.log("MONGO:", process.env.MONGO_URI ? "FOUND" : "MISSING");
