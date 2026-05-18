@@ -1,0 +1,5 @@
+John Doe
+Software Engineer
+Experience: Built MERN stack applications, deployed microservices, improved performance by 30%.
+Skills: JavaScript, React, Node.js, MongoDB, SQL, Docker
+Projects: AI integration, resume parser, ATS tooling
