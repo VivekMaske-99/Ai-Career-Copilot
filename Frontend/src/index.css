@@ -1,0 +1,230 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   ROOT DESIGN SYSTEM
+========================= */
+:root {
+  --bg: #f8fafc; /* light gray/white */
+  --surface: #ffffff; /* cards */
+  --surface-2: #ffffff; 
+  --border: #e5e7eb;
+  --glass-blur: 6px;
+  --primary-from: #22c55e; /* primary green */
+  --primary-to: #4ade80; /* accent green */
+  --muted: #6b7280; /* gray text */
+}
+
+/* =========================
+   GLOBAL RESET
+========================= */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: #0f172a;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* =========================
+   SURFACES (GLASS UI)
+========================= */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(calc(var(--glass-blur)));
+}
+
+.surface-2 {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(calc(var(--glass-blur)));
+}
+
+/* =========================
+   BORDER RADIUS
+========================= */
+.rounded-xl-3 {
+  border-radius: 1rem;
+}
+
+.rounded-2xl {
+  border-radius: 1.25rem;
+}
+
+.rounded-3xl {
+  border-radius: 1.75rem;
+}
+
+/* =========================
+   GRADIENTS & EFFECTS
+========================= */
+.gradient-primary {
+  background-image: linear-gradient(90deg, var(--primary-from), var(--primary-to));
+}
+
+/* Navbar link underline animation */
+.nav-link {
+  position: relative;
+  display: inline-block;
+  transition: color 0.3s ease-in-out;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary-from), var(--primary-to));
+  transition: width 0.28s cubic-bezier(.2,.9,.2,1);
+  border-radius: 2px;
+}
+.nav-link:hover::after { width: 100%; }
+
+/* Glow helpers */
+.green-glow {
+  box-shadow: 0 6px 24px rgba(34,197,94,0.08), 0 0 30px rgba(34,197,94,0.04);
+}
+
+/* Smooth universal transition helper */
+.ui-transition { transition: all 0.3s ease-in-out; }
+
+.green-glow-text {
+  background-image: linear-gradient(90deg, var(--primary-from), var(--primary-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 6px 24px rgba(34,197,94,0.12), 0 2px 8px rgba(74,222,128,0.06);
+}
+
+@keyframes floaty {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-arrow {
+  0% { opacity: 0.6; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-4px); }
+  100% { opacity: 0.6; transform: translateY(0); }
+}
+
+@keyframes cta-gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.cta-gradient-animate {
+  background-size: 200% 200%;
+  animation: cta-gradient-shift 8s ease infinite;
+}
+
+.glow {
+  box-shadow:
+    0 6px 30px rgba(59, 130, 246, 0.08),
+    0 2px 8px rgba(139, 92, 246, 0.06);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.transition-smooth {
+  transition: all 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* =========================
+   HERO PREVIEW CARD
+========================= */
+.preview-card {
+  width: 360px;
+  height: 240px;
+  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+  transform-origin: center;
+  transition: transform 0.24s cubic-bezier(.2,.9,.2,1), box-shadow 0.24s;
+}
+
+/* =========================
+   BUTTON SYSTEM (TAILWIND SAFE)
+========================= */
+.btn {
+  @apply inline-flex items-center justify-center font-semibold px-4 py-2 transition-all duration-200;
+}
+
+.btn-primary {
+  background-color: #22c55e; /* green-500 */
+  color: #ffffff;
+  border-radius: 0.75rem; /* rounded-xl */
+}
+
+.btn-primary:hover {
+  background-color: #16a34a; /* green-600 */
+}
+
+.btn-ghost,
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  color: #374151; /* gray-700 */
+  border-radius: 0.75rem;
+}
+
+.btn-ghost:hover {
+  background: #f3f4f6; /* gray-100 */
+}
+
+/* =========================
+   LAYOUT HELPERS
+========================= */
+.section {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+}
+
+.container-custom {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* =========================
+   TABLE STYLE
+========================= */
+.table-box {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.02),
+    rgba(255, 255, 255, 0.01)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* =========================
+   DRAG & DROP STATE
+========================= */
+.drop-active {
+  border-color: rgba(59, 130, 246, 0.6) !important;
+  transform: translateY(-4px);
+}
+
+/* =========================
+   UTILITIES
+========================= */
+.circle-wrap {
+  display: inline-grid;
+  place-items: center;
+}
